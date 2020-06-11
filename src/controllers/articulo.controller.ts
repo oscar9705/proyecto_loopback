@@ -1,31 +1,22 @@
-import {
-  Count,
-  CountSchema,
-  Filter,
-  FilterExcludingWhere,
-  repository,
-  Where,
-} from '@loopback/repository';
-import {
-  post,
-  param,
-  get,
-  getModelSchemaRef,
-  patch,
-  put,
-  del,
-  requestBody,
-} from '@loopback/rest';
+import {authenticate} from '@loopback/authentication';
+import {authorize} from '@loopback/authorization';
+import {inject} from '@loopback/core';
+import {Count, CountSchema, Filter, FilterExcludingWhere, repository, Where} from '@loopback/repository';
+import {del, get, getModelSchemaRef, param, patch, post, put, requestBody} from '@loopback/rest';
+import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
 import {Articulo} from '../models';
 import {ArticuloRepository} from '../repositories';
+import {basicAuthorization} from '../services/basic.authorizor';
+import {OPERATION_SECURITY_SPEC} from '../utils/security-spec';
 
 export class ArticuloController {
   constructor(
     @repository(ArticuloRepository)
-    public articuloRepository : ArticuloRepository,
+    public articuloRepository: ArticuloRepository,
   ) {}
 
   @post('/articulos', {
+    security: OPERATION_SECURITY_SPEC,
     responses: {
       '200': {
         description: 'Articulo model instance',
@@ -33,19 +24,27 @@ export class ArticuloController {
       },
     },
   })
+  @authenticate('jwt')
+  @authorize({
+    allowedRoles: ['admin', 'support', 'customer'],
+    voters: [basicAuthorization],
+  })
   async create(
     @requestBody({
       content: {
         'application/json': {
           schema: getModelSchemaRef(Articulo, {
             title: 'NewArticulo',
-            exclude: ['id'],
+            exclude: ['id', 'usuarioId'],
           }),
         },
       },
     })
-    articulo: Omit<Articulo, 'id'>,
+    articulo: Omit<Articulo, 'id'>, @inject(SecurityBindings.USER)
+    currentUserProfile: UserProfile,
   ): Promise<Articulo> {
+    /* currentUserProfile.id = currentUserProfile[securityId]; */
+    articulo.usuarioId = currentUserProfile[securityId];
     return this.articuloRepository.create(articulo);
   }
 
@@ -64,6 +63,7 @@ export class ArticuloController {
   }
 
   @get('/articulos', {
+    security: OPERATION_SECURITY_SPEC,
     responses: {
       '200': {
         description: 'Array of Articulo model instances',
@@ -117,6 +117,11 @@ export class ArticuloController {
         },
       },
     },
+  })
+  @authenticate('jwt')
+  @authorize({
+    allowedRoles: ['admin', 'support', 'customer'],
+    voters: [basicAuthorization],
   })
   async findById(
     @param.path.number('id') id: number,

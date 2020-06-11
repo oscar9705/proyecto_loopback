@@ -1,4 +1,5 @@
 import {authenticate, TokenService, UserService} from '@loopback/authentication';
+import {authorize} from '@loopback/authorization';
 import {inject} from '@loopback/core';
 import {Count, CountSchema, Filter, FilterExcludingWhere, repository, Where} from '@loopback/repository';
 import {del, get, getModelSchemaRef, HttpErrors, param, patch, post, put, requestBody} from '@loopback/rest';
@@ -6,9 +7,11 @@ import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
 import _ from 'lodash';
 import {PasswordHasherBindings, TokenServiceBindings, UserServiceBindings} from '../keys';
 import {Credentials, UserRepository} from '../repositories';
+import {basicAuthorization} from '../services/basic.authorizor';
 import {PasswordHasher} from '../services/hash.password.bcryptjs';
 import {validateCredentials} from '../services/validator';
 import {User} from './../models/user.model';
+import {OPERATION_SECURITY_SPEC} from './../utils/security-spec';
 import {CredentialsRequestBody, UserProfileSchema} from './specs/user-controller.specs';
 
 export class UserController {
@@ -46,7 +49,7 @@ export class UserController {
   ): Promise<User> {
     // ensure a valid email value and password value
     validateCredentials(_.pick(user, ['email', 'password']));
-
+    user.roles = ['customer'];
     // encrypt the password
     const password = await this.passwordHasher.hashPassword(
       user.password,
@@ -81,6 +84,7 @@ export class UserController {
   }
 
   @get('/users', {
+    security: OPERATION_SECURITY_SPEC,
     responses: {
       '200': {
         description: 'Array of User model instances',
@@ -94,6 +98,10 @@ export class UserController {
         },
       },
     },
+  })
+  @authenticate('jwt')
+  @authorize({
+    voters: [basicAuthorization],
   })
   async find(
     @param.filter(User) filter?: Filter<User>,
@@ -124,6 +132,7 @@ export class UserController {
   }
 
   @get('/users/{id}', {
+    security: OPERATION_SECURITY_SPEC,
     responses: {
       '200': {
         description: 'User model instance',
@@ -135,12 +144,26 @@ export class UserController {
       },
     },
   })
+  @authenticate('jwt')
+  @authorize({
+    allowedRoles: ['admin', 'support', 'customer'],
+    voters: [basicAuthorization],
+  })
   async findById(
     @param.path.number('id') id: number,
     @param.filter(User, {exclude: 'where'}) filter?: FilterExcludingWhere<User>
   ): Promise<User> {
     return this.userRepository.findById(id, filter);
   }
+  /*  @authenticate('jwt')
+       @authorize({
+    allowedRoles: ['admin', 'support', 'customer'],
+     voters: [basicAuthorization],
+   }) */
+  // async findById(@param.path.number('id') id: number): Promise<User> {
+  //   return this.userRepository.findById(id);
+  // }
+
 
   @patch('/users/{id}', {
     responses: {
@@ -221,7 +244,7 @@ export class UserController {
     return {token};
   }
   @get('/users/me', {
-    //security: OPERATION_SECURITY_SPEC,
+    security: OPERATION_SECURITY_SPEC,
     responses: {
       '200': {
         description: 'The current user profile',

@@ -38,6 +38,11 @@ export class User extends Entity {
   })
   codigo?: string;
 
+  @property({
+    type: 'array',
+    itemType: 'string',
+  })
+  roles?: string[];
 
   constructor(data?: Partial<User>) {
     super(data);

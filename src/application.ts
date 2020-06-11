@@ -1,4 +1,5 @@
 import {AuthenticationComponent} from '@loopback/authentication';
+import {AuthorizationComponent} from '@loopback/authorization';
 import {BootMixin} from '@loopback/boot';
 import {ApplicationConfig, BindingKey, createBindingFromClass} from '@loopback/core';
 import {RepositoryMixin} from '@loopback/repository';
@@ -12,7 +13,10 @@ import {MyAuthenticationSequence} from './sequence';
 import {BcryptHasher} from './services/hash.password.bcryptjs';
 import {JWTService} from './services/jwt-service';
 import {MyUserService} from './services/user-service';
-import {SECURITY_SCHEME_SPEC, SECURITY_SPEC} from './utils/security-spec';
+import {
+  SECURITY_SCHEME_SPEC
+  //  ,SECURITY_SPEC
+} from './utils/security-spec';
 
 /**
  * Information from package.json
@@ -36,11 +40,12 @@ export class ProyectoApplication extends BootMixin(
       paths: {},
       components: {securitySchemes: SECURITY_SCHEME_SPEC},
       servers: [{url: '/'}],
-      security: SECURITY_SPEC
+      // security: SECURITY_SPEC
     });
     this.setUpBindings();
     // Bind authentication component related elements
     this.component(AuthenticationComponent);
+    this.component(AuthorizationComponent);
 
     // Set up the custom sequence
     this.sequence(MyAuthenticationSequence);

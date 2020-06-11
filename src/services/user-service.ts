@@ -49,7 +49,11 @@ export class MyUserService implements UserService<User, Credentials> {
       [securityId]: user.id,
       name: userName,
       id: user.id,
+      roles: user.roles,
     };
+    console.log(user.roles);
+    console.log("roles");
+    console.log(userProfile);
     return userProfile;
   }
 }

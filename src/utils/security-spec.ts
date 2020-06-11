@@ -1,6 +1,6 @@
 import {ReferenceObject, SecuritySchemeObject} from '@loopback/openapi-v3';
 
-export const SECURITY_SPEC = [{bearerAuth: []}];
+export const OPERATION_SECURITY_SPEC = [{bearerAuth: []}];
 export type SecuritySchemeObjects = {
   [securityScheme: string]: SecuritySchemeObject | ReferenceObject;
 };
