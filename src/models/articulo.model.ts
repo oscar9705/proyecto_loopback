@@ -27,7 +27,6 @@ export class Articulo extends Entity {
   })
   usuarioId: number;
 
-
   constructor(data?: Partial<Articulo>) {
     super(data);
   }
@@ -35,6 +34,8 @@ export class Articulo extends Entity {
 
 export interface ArticuloRelations {
   // describe navigational properties here
+
+
 }
 
 export type ArticuloWithRelations = Articulo & ArticuloRelations;
